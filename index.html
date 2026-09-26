@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JosuéKUNDEBOOST - Plateforme de Boost & Paiement Automatisé</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            black: '#090a0f',
+                            dark: '#101424',
+                            card: '#161d36',
+                            neonCyan: '#00f0ff',
+                            neonPurple: '#7000ff',
+                            neonPink: '#ff007f',
+                            gold: '#ffd700'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- HTML5 QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090a0f;
+            color: #e2e8f0;
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(112, 0, 255, 0.4);
+        }
+
+        .glow-gold {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #090a0f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #161d36;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+
+        .sim-ussd-modal {
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <header
+        class="sticky top-0 z-40 bg-cyber-dark/90 backdrop-blur-md border-b border-cyber-neonCyan/20 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('boost')">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-purple-600 to-pink-500 p-0.5 flex items-center justify-center glow-cyan">
+                    <div class="w-full h-full bg-cyber-black rounded-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-bolt text-cyan-400 text-xl"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-wider text-white">Josué<span
+                            class="text-cyan-400">KUNDE</span><span class="text-pink-500">BOOST</span></h1>
+                    <p class="text-[10px] text-gray-400 tracking-widest uppercase">Propulsion Sociale Instantanée & SIM
+                        Express</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div id="creatorHeaderBadge"
+                    class="hidden items-center space-x-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/50 px-3 py-1 rounded-full animate-pulse">
+                    <i class="fa-solid fa-crown text-amber-400 text-xs"></i>
+                    <span class="text-xs font-bold text-amber-300 uppercase">Créateur VIP : 100% Off</span>
+                </div>
+
+                <div id="userInfo" class="hidden text-right">
+                    <span id="userNameDisplay" class="text-xs font-bold block text-cyan-300">Utilisateur</span>
+                    <span id="userRoleDisplay" class="text-[10px] text-gray-400 block">Membre Connecté</span>
+                </div>
+
+                <button onclick="openCreatorModal()"
+                    class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-key"></i>
+                    <span class="hidden sm:inline">Espace VIP</span>
+                </button>
+
+                <button id="authBtn" onclick="openAuthModal()"
+                    class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-4 py-1.5 rounded-lg text-xs transition shadow-lg glow-cyan">
+                    Connexion
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-6 flex-grow">
+
+        <!-- Banner Créateur VIP Active -->
+        <div id="creatorActiveBanner"
+            class="hidden mb-6 bg-gradient-to-r from-amber-950/80 via-purple-950/80 to-cyber-card border-2 border-amber-500/60 rounded-2xl p-4 sm:p-6 shadow-2xl glow-gold relative overflow-hidden">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+                <div class="flex items-center space-x-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 text-xl flex-shrink-0">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-amber-300">Bienvenue Josué KUNDE (Créateur VIP)</h2>
+                        <p class="text-xs text-gray-300 mt-1">Vous bénéficiez du boost illimité gratuit (0 FC) !</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="logoutCreator()"
+                        class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-2 rounded-xl text-xs font-bold transition">
+                        <i class="fa-solid fa-power-off mr-1"></i> Quitter Mode VIP
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Navigation Tabs -->
+        <div class="flex border-b border-gray-800 mb-6 overflow-x-auto no-scrollbar space-x-2 pb-2">
+            <button id="tab-boost" onclick="switchTab('boost')"
+                class="tab-btn px-4 py-2 rounded-xl text-sm font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center space-x-2 flex-shrink-0">
+                <i class="fa-solid fa-rocket"></i>
+                <span>Commander un Boost</span>
+            </button>
+            <button id="tab-creator" onclick="switchTab('creator')"
+                class="tab-btn px-4 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 transition flex items-center space-x-2 flex-shrink-0">
+                <i class="fa-solid fa-crown text-amber-400"></i>
+                <span>Espace VIP Créateur</span>
+            </button>
+            <button id="tab-qr" onclick="switchTab('qr')"
+                class="tab-btn px-4 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-cyan-400 hover:bg-cyber-card transition flex items-center space-x-2 flex-shrink-0">
+                <i class="fa-solid fa-qrcode"></i>
+                <span>Scan QR & Reçus</span>
+            </button>
+        </div>
+
+        <div id="content-boost" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- 1. Sélection Réseau Social -->
+                <div class="bg-cyber-card border border-gray-800 rounded-2xl p-5 shadow-xl">
+                    <label class="block text-xs font-bold text-cyan-400 uppercase tracking-wider mb-3">1. Sélection du
+                        Réseau Social</label>
+                    <div class="grid grid-cols-5 gap-2 sm:gap-3">
+                        <button onclick="selectPlatform('tiktok', this)"
+                            class="platform-btn active-platform bg-cyber-dark border-2 border-cyan-400 p-3 rounded-xl text-center flex flex-col items-center justify-center transition">
+                            <i class="fa-brands fa-tiktok text-2xl mb-1 text-cyan-400"></i>
+                            <span class="text-[11px] font-semibold">TikTok</span>
+                        </button>
+                        <button onclick="selectPlatform('facebook', this)"
+                            class="platform-btn bg-cyber-dark border border-gray-800 p-3 rounded-xl text-center flex flex-col items-center justify-center transition">
+                            <i class="fa-brands fa-facebook text-2xl mb-1 text-blue-500"></i>
+                            <span class="text-[11px] font-semibold">Facebook</span>
+                        </button>
+                        <button onclick="selectPlatform('instagram', this)"
+                            class="platform-btn bg-cyber-dark border border-gray-800 p-3 rounded-xl text-center flex flex-col items-center justify-center transition">
+                            <i class="fa-brands fa-instagram text-2xl mb-1 text-pink-500"></i>
+                            <span class="text-[11px] font-semibold">Instagram</span>
+                        </button>
+                        <button onclick="selectPlatform('youtube', this)"
+                            class="platform-btn bg-cyber-dark border border-gray-800 p-3 rounded-xl text-center flex flex-col items-center justify-center transition">
+                            <i class="fa-brands fa-youtube text-2xl mb-1 text-red-500"></i>
+                            <span class="text-[11px] font-semibold">YouTube</span>
+                        </button>
+                        <button onclick="selectPlatform('twitter', this)"
+                            class="platform-btn bg-cyber-dark border border-gray-800 p-3 rounded-xl text-center flex flex-col items-center justify-center transition">
+                            <i class="fa-brands fa-x-twitter text-2xl mb-1 text-white"></i>
+                            <span class="text-[11px] font-semibold">X / Twitter</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Sélection Pack ou Montant Personnalisé -->
+                <div class="bg-cyber-card border border-gray-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <label class="block text-xs font-bold text-cyan-400 uppercase tracking-wider">2. Choix de l'offre de
+                        Boost</label>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <button onclick="selectPack(1000, '1000 Vues / Likes / Abonnés', this)"
+                            class="pack-btn bg-cyber-dark border-2 border-cyan-400 p-3 rounded-xl text-left transition">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase">1000 Vues + Abonnés</div>
+                            <div class="text-lg font-black text-cyan-300">1 000 FC</div>
+                        </button>
+                        <button onclick="selectPack(2000, '2000 Vues / Likes / Abonnés', this)"
+                            class="pack-btn bg-cyber-dark border border-gray-800 hover:border-cyan-400 p-3 rounded-xl text-left transition">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase">2000 Vues + Abonnés</div>
+                            <div class="text-lg font-black text-cyan-300">2 000 FC</div>
+                        </button>
+                        <button onclick="selectPack(3000, '3000 Vues / Likes / Abonnés', this)"
+                            class="pack-btn bg-cyber-dark border border-gray-800 hover:border-cyan-400 p-3 rounded-xl text-left transition">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase">3000 Vues + Abonnés</div>
+                            <div class="text-lg font-black text-cyan-300">3 000 FC</div>
+                        </button>
+                        <button onclick="selectPack(4000, '4000 Vues / Likes / Abonnés', this)"
+                            class="pack-btn bg-cyber-dark border border-gray-800 hover:border-cyan-400 p-3 rounded-xl text-left transition">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase">4000 Vues + Abonnés</div>
+                            <div class="text-lg font-black text-cyan-300">4 000 FC</div>
+                        </button>
+                        <button onclick="selectPack(5000, '5000 Vues / Likes / Abonnés', this)"
+                            class="pack-btn bg-cyber-dark border border-gray-800 hover:border-cyan-400 p-3 rounded-xl text-left transition">
+                            <div class="text-[10px] text-gray-400 font-bold uppercase">5000 Vues + Abonnés</div>
+                            <div class="text-lg font-black text-cyan-300">5 000 FC</div>
+                        </button>
+                        <button onclick="selectPack(6000, '10000 Vues / Likes / Abonnés', this)"
+                            class="pack-btn bg-cyber-dark border border-amber-500/50 hover:border-amber-400 p-3 rounded-xl text-left transition">
+                            <div class="text-[10px] font-bold text-amber-400 uppercase">10000 Vues Max</div>
+                            <div class="text-lg font-black text-amber-300">6 000 FC</div>
+                        </button>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-800">
+                        <label class="block text-xs text-gray-400 mb-1">Ou Entrez un Montant Sur Mesure (FC) :</label>
+                        <input type="number" id="customAmount" placeholder="Ex: 8000" oninput="handleCustomAmount()"
+                            class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition text-sm">
+                    </div>
+                </div>
+
+                <!-- 3. Saisie du Lien de publication/compte -->
+                <div class="bg-cyber-card border border-gray-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <label class="block text-xs font-bold text-cyan-400 uppercase tracking-wider">3. Lien de la
+                        Publication ou du Compte</label>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Collez le lien direct à booster :</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-xs text-cyan-400"><i
+                                    class="fa-solid fa-link"></i></span>
+                            <input type="url" id="targetUrl"
+                                placeholder="https://www.tiktok.com/@josue_kunde/video/123456"
+                                class="w-full bg-cyber-dark border border-gray-700 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-cyber-card border border-gray-800 rounded-2xl p-5 shadow-xl space-y-5">
+                    <label class="block text-xs font-bold text-cyan-400 uppercase tracking-wider">4. Mode de Paiement
+                        Direct</label>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="payModeSim" onclick="togglePaymentMode('sim')"
+                            class="bg-cyber-dark border-2 border-cyan-400 p-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-white transition">
+                            <i class="fa-solid fa-sim-card text-emerald-400 text-lg"></i>
+                            <span>Carte SIM / Mobile Money</span>
+                        </button>
+                        <button id="payModeBank" onclick="togglePaymentMode('bank')"
+                            class="bg-cyber-dark border border-gray-800 p-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-gray-400 hover:border-cyan-400 transition">
+                            <i class="fa-regular fa-credit-card text-yellow-400 text-lg"></i>
+                            <span>Carte Bancaire / VISA</span>
+                        </button>
+                    </div>
+
+                    <!-- FORMULAIRE SIM (Sans nom du titulaire + Bouton sous le numéro) -->
+                    <div id="formPaySim" class="space-y-4 pt-2 border-t border-gray-800">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Sélectionnez l'Opérateur SIM :</label>
+                            <select id="simOperator"
+                                class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-3 py-2.5 text-xs text-white focus:border-cyan-400 font-bold">
+                                <option value="Vodacom M-Pesa">Vodacom M-Pesa (0818431404)</option>
+                                <option value="Airtel Money">Airtel Money</option>
+                                <option value="Orange Money">Orange Money</option>
+                                <option value="Africell Money">Africell Money</option>
+                                <option value="MTN Mobile Money">MTN Mobile Money</option>
+                                <option value="Moov Money">Moov Money</option>
+                                <option value="Wave">Wave</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Numéro de Téléphone / Carte SIM :</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-xs text-emerald-400 font-bold"><i
+                                        class="fa-solid fa-phone"></i></span>
+                                <input type="tel" id="simPhoneNumber" placeholder="0818431404 ou 0996857074"
+                                    class="w-full bg-cyber-dark border border-gray-700 rounded-xl pl-9 pr-4 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-cyan-400">
+                            </div>
+                        </div>
+
+                        <!-- BOUTON VALIDER LE PAIEMENT PLACE DIRECTEMENT EN DESSOUS DU NUMERO -->
+                        <button id="btnValidateSimPay" onclick="openSimUssdModal()"
+                            class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-black font-extrabold py-3.5 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg glow-cyan text-sm">
+                            <i class="fa-solid fa-lock text-base"></i>
+                            <span>Valider le Paiement SIM</span>
+                        </button>
+                    </div>
+
+                    <!-- FORMULAIRE BANQUE & CARTE VISA -->
+                    <div id="formPayBank" class="hidden space-y-4 pt-2 border-t border-gray-800">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Réseau de Carte ou Banque :</label>
+                            <select id="bankNetwork"
+                                class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-400">
+                                <option value="Visa / Mastercard">Visa / Mastercard</option>
+                                <option value="Illicocash / Rawbank">Illicocash (Rawbank)</option>
+                                <option value="EquityBCDC">EquityBCDC Carte</option>
+                                <option value="Meta Beta Bank">Meta / Beta Payment</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Nom du Titulaire de la Carte :</label>
+                            <input type="text" id="cardHolderName" placeholder="Ex: Josué Kunde"
+                                class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-4 py-2 text-white text-sm focus:border-cyan-400">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Numéro de la Carte :</label>
+                            <input type="text" id="cardNumber" placeholder="4000 0000 0000 0000" maxlength="19"
+                                oninput="formatCardNumber(this)"
+                                class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-4 py-2 text-white font-mono text-sm focus:border-cyan-400">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Expiration (MM/AA) :</label>
+                                <input type="text" id="cardExpiry" placeholder="12/28" maxlength="5"
+                                    class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-3 py-2 text-white font-mono text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Code CVC / CVV :</label>
+                                <input type="password" id="cardCvc" placeholder="123" maxlength="4"
+                                    class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-3 py-2 text-white font-mono text-sm">
+                            </div>
+                        </div>
+
+                        <button onclick="processBankPayment()"
+                            class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-extrabold py-3.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm shadow-lg">
+                            <i class="fa-solid fa-credit-card"></i>
+                            <span>Payer par Carte Bancaire</span>
+                        </button>
+                    </div>
+
+                    <!-- Note récepteur -->
+                    <div class="p-3 bg-cyber-dark/90 rounded-xl border border-gray-800 text-xs text-gray-300 space-y-1">
+                        <p class="font-bold text-cyan-300"><i
+                                class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> Réception Officielle Josué
+                            KUNDE :</p>
+                        <p>Compte M-Pesa Vodacom / Illicocash : <strong
+                                class="text-emerald-400 font-mono">0818431404</strong></p>
+                        <p class="text-[10px] text-purple-400">50% de la transaction transférée automatiquement à
+                            l'auteur.</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-5 space-y-6">
+                <div
+                    class="bg-cyber-card border-2 border-cyan-500/30 rounded-2xl p-6 shadow-2xl sticky top-20 space-y-4">
+                    <h3
+                        class="text-base font-extrabold text-white border-b border-gray-800 pb-3 flex items-center justify-between">
+                        <span>Récapitulatif de votre Commande</span>
+                        <span id="badgeSummary"
+                            class="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 px-2 py-0.5 rounded">Standard</span>
+                    </h3>
+
+                    <div class="py-2 space-y-2.5 text-xs">
+                        <div class="flex justify-between text-gray-400">
+                            <span>Réseau Sélectionné :</span>
+                            <span id="summaryPlatform" class="font-bold text-white capitalize">TikTok</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Méthode choisie :</span>
+                            <span id="summaryPaymentType" class="font-bold text-emerald-400">Carte SIM / Mobile
+                                Money</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Numéro / Identifiant :</span>
+                            <span id="summaryPayAccount" class="font-mono text-yellow-300 font-bold">Non fourni</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Prix du Pack :</span>
+                            <span id="summaryBasePrice" class="font-bold text-white">1 000 FC</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Part Auteur (50%) :</span>
+                            <span id="summaryCommission" class="font-bold text-purple-400">500 FC</span>
+                        </div>
+
+                        <div class="pt-3 border-t border-gray-800 flex justify-between items-end">
+                            <div>
+                                <span class="text-xs text-gray-400 block">Total Net à Payer</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="summaryTotal" class="text-2xl font-black text-cyan-400">1 000 FC</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Envoi direct WhatsApp / Gmail -->
+                    <div class="space-y-3 pt-2">
+                        <button id="btnOrderWhatsApp" onclick="sendOrderWhatsAppDirect()"
+                            class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg text-xs">
+                            <i class="fa-brands fa-whatsapp text-base"></i>
+                            <span>Envoyer Commande via WhatsApp</span>
+                        </button>
+
+                        <button id="btnOrderEmail" onclick="sendOrderEmailDirect()"
+                            class="w-full bg-cyber-dark border border-gray-700 hover:border-cyan-400 text-gray-200 font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-xs">
+                            <i class="fa-solid fa-envelope"></i>
+                            <span>Envoyer au Gmail de l'Auteur</span>
+                        </button>
+
+                        <button id="btnCreatorFreeBoost" onclick="executeCreatorFreeBoost()"
+                            class="hidden w-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-black font-black py-3 rounded-xl hover:brightness-110 transition flex items-center justify-center space-x-2 shadow-2xl glow-gold text-xs">
+                            <i class="fa-solid fa-bolt-lightning text-base"></i>
+                            <span>Exécuter Boost Gratuit (VIP)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: Espace Créateur VIP -->
+        <div id="content-creator" class="tab-content hidden space-y-6">
+            <div class="bg-cyber-card border border-amber-500/30 rounded-2xl p-6 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-black text-amber-300">Espace Administrateur VIP</h2>
+                        <p class="text-xs text-gray-400">Reservé au Fondateur Josué KUNDE</p>
+                    </div>
+                </div>
+
+                <div id="creatorLoginForm"
+                    class="max-w-md mx-auto my-6 bg-cyber-dark p-6 rounded-xl border border-amber-500/30 space-y-4">
+                    <h3 class="text-sm font-bold text-center text-amber-300">Code Privilégié Admin</h3>
+                    <input type="password" id="creatorPasscode" placeholder="Entrez JOSUE2026"
+                        class="w-full bg-cyber-black border border-gray-700 rounded-lg px-4 py-2 text-white text-sm focus:border-amber-400 focus:outline-none">
+                    <button onclick="loginCreator()"
+                        class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-2.5 rounded-lg transition text-xs">
+                        Activer Mode Gratuit
+                    </button>
+                    <p class="text-[10px] text-gray-500 text-center">Code secret : <code
+                            class="text-amber-400">JOSUE2026</code></p>
+                </div>
+
+                <div id="creatorDashboard" class="hidden space-y-6">
+                    <div class="p-4 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs">
+                        <strong class="font-bold">Accès VIP Actif !</strong> Vous pouvez tester le système de boost sans
+                        paiement.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: QR Code & Scanner -->
+        <div id="content-qr" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-cyber-card border border-gray-800 rounded-2xl p-6 space-y-4 text-center">
+                    <h3 class="text-sm font-bold text-cyan-300">QR Code M-Pesa / Illicocash</h3>
+                    <div class="bg-white p-4 rounded-xl max-w-[200px] mx-auto">
+                        <img id="qrCodeImage"
+                            src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=tel:0818431404&color=000000"
+                            alt="QR Code Paiement" class="w-full h-auto mx-auto">
+                        <span class="text-[10px] text-black font-mono font-bold block mt-2">Josué KUNDE -
+                            0818431404</span>
+                    </div>
+                </div>
+
+                <div class="bg-cyber-card border border-gray-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-cyan-300">Scanner de QR Code Caméra</h3>
+                    <div id="qr-reader"
+                        class="w-full bg-cyber-dark rounded-xl border border-gray-700 overflow-hidden min-h-[200px]">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL CONFIRMATION USSD / CODE PIN SIM OPERATEUR -->
+    <div id="simUssdModal"
+        class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="sim-ussd-modal bg-cyber-card border-2 border-emerald-500/60 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative text-center">
+
+            <div
+                class="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mx-auto text-emerald-400 text-2xl">
+                <i class="fa-solid fa-sim-card"></i>
+            </div>
+
+            <div>
+                <h3 id="modalOperatorTitle" class="text-lg font-black text-white">Confirmation Vodacom M-Pesa</h3>
+                <p class="text-xs text-gray-400 mt-1">Message d'autorisation de votre carte SIM</p>
+            </div>
+
+            <div class="bg-cyber-dark border border-gray-800 p-4 rounded-xl text-left space-y-2 text-xs">
+                <p class="text-gray-300">Autorisez le transfert de <strong id="modalSimAmount"
+                        class="text-emerald-400 font-bold">1 000 FC</strong> vers :</p>
+                <p class="font-mono text-cyan-300 font-bold">Josué KUNDE (0818431404)</p>
+                <p class="text-[10px] text-gray-400">Inclus la commission de 50% destinée à la propulsion de vos
+                    publications.</p>
+            </div>
+
+            <div class="space-y-2 text-left">
+                <label class="block text-xs font-bold text-amber-300">Entrez votre Mot de passe / Code PIN Secret
+                    :</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-3 text-xs text-gray-400"><i class="fa-solid fa-key"></i></span>
+                    <input type="password" id="simUserPin" placeholder="Entrez votre Code PIN SIM (ex: ****)"
+                        maxlength="6"
+                        class="w-full bg-cyber-dark border-2 border-emerald-500/50 rounded-xl pl-9 pr-4 py-2.5 text-white font-mono text-center tracking-widest text-lg focus:outline-none focus:border-emerald-400">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeSimUssdModal()"
+                    class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl text-xs transition">
+                    Annuler
+                </button>
+                <button onclick="confirmSimPinTransaction()"
+                    class="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3 rounded-xl text-xs transition shadow-lg glow-cyan flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Confirmer Paiement</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Floating Widget -->
+    <div class="fixed bottom-5 right-5 z-50">
+        <div id="aiChatBox"
+            class="hidden w-80 sm:w-96 bg-cyber-card border-2 border-cyan-400/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col mb-4 max-h-[450px]">
+            <div class="bg-cyber-dark p-3 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div
+                        class="w-7 h-7 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 text-xs font-bold">
+                        AI</div>
+                    <h4 class="text-xs font-extrabold text-white">Josué Boost AI</h4>
+                </div>
+                <button onclick="toggleAiChat()" class="text-gray-400 hover:text-white text-sm"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="aiMessages" class="p-3 overflow-y-auto h-64 space-y-3 text-xs">
+                <div class="bg-cyber-dark p-2.5 rounded-xl border border-gray-800 text-gray-300">
+                    Bonjour ! Tapez votre numéro de SIM puis cliquez sur "Valider le paiement SIM" pour faire
+                    l'opération avec votre code PIN !
+                </div>
+            </div>
+            <div class="p-2 border-t border-gray-800 bg-cyber-dark flex items-center space-x-2">
+                <input type="text" id="aiInput" placeholder="Posez votre question..."
+                    onkeypress="handleAiKeyPress(event)"
+                    class="w-full bg-cyber-black border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+                <button onclick="sendAiMessage()" class="bg-cyan-500 text-black p-2 rounded-lg text-xs font-bold"><i
+                        class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <button onclick="toggleAiChat()"
+            class="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-600 text-black flex items-center justify-center text-xl shadow-xl hover:scale-105 transition glow-cyan">
+            <i class="fa-solid fa-robot text-white"></i>
+        </button>
+    </div>
+
+    <!-- Modal Creator Key -->
+    <div id="creatorModal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-cyber-card border-2 border-amber-500/50 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+            <button onclick="closeCreatorModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-black text-amber-300 text-center">Espace Créateur VIP</h3>
+            <input type="password" id="modalCreatorPasscode" placeholder="Code secret (JOSUE2026)"
+                class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-4 py-2 text-white text-sm">
+            <button onclick="loginCreatorFromModal()"
+                class="w-full bg-amber-500 text-black font-extrabold py-3 rounded-xl text-xs">Activer Mode VIP</button>
+        </div>
+    </div>
+
+    <!-- Modal Client Standard -->
+    <div id="authModal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-cyber-card border border-cyan-500/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-base font-bold text-cyan-300 text-center">Connexion Client</h3>
+            <input type="text" id="clientName" placeholder="Votre Nom"
+                class="w-full bg-cyber-dark border border-gray-700 rounded-xl px-4 py-2 text-white text-sm">
+            <button onclick="loginStandardUser()"
+                class="w-full bg-cyan-500 text-black font-extrabold py-2.5 rounded-xl text-xs">Se Connecter</button>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentPlatform = 'tiktok';
+        let currentAmount = 1000;
+        let selectedPaymentType = 'sim';
+        let isCreatorVIP = false;
+        let currentUser = null;
+
+        const ADMIN_CODES = ['JOSUE2026', 'KUNDE2026', 'MAESTRO2026'];
+        const CONTACT_WHATSAPP_1 = "243818431404";
+        const CONTACT_WHATSAPP_2 = "243996857074";
+        const CONTACT_EMAIL = "josuekundemaestro@gmail.com";
+
+        window.onload = function () {
+            updateSummary();
+            initQrScanner();
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-cyan-500/20', 'text-cyan-400', 'border', 'border-cyan-500/40');
+                btn.classList.add('text-gray-400');
+            });
+
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-cyan-500/20', 'text-cyan-400', 'border', 'border-cyan-500/40');
+                activeBtn.classList.remove('text-gray-400');
+            }
+        }
+
+        function selectPlatform(platform, element) {
+            currentPlatform = platform;
+            document.querySelectorAll('.platform-btn').forEach(btn => {
+                btn.classList.remove('border-2', 'border-cyan-400');
+                btn.classList.add('border-gray-800');
+            });
+            element.classList.remove('border-gray-800');
+            element.classList.add('border-2', 'border-cyan-400');
+            updateSummary();
+        }
+
+        function selectPack(amount, label, element) {
+            currentAmount = amount;
+            document.getElementById('customAmount').value = '';
+
+            document.querySelectorAll('.pack-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-400', 'border-2');
+                btn.classList.add('border-gray-800');
+            });
+            element.classList.remove('border-gray-800');
+            element.classList.add('border-2', 'border-cyan-400');
+            updateSummary();
+        }
+
+        function handleCustomAmount() {
+            const val = parseInt(document.getElementById('customAmount').value);
+            if (val && val > 0) {
+                currentAmount = val;
+                updateSummary();
+            }
+        }
+
+        function togglePaymentMode(mode) {
+            selectedPaymentType = mode;
+            const btnSim = document.getElementById('payModeSim');
+            const btnBank = document.getElementById('payModeBank');
+            const formSim = document.getElementById('formPaySim');
+            const formBank = document.getElementById('formPayBank');
+
+            if (mode === 'sim') {
+                btnSim.className = "bg-cyber-dark border-2 border-cyan-400 p-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-white transition";
+                btnBank.className = "bg-cyber-dark border border-gray-800 p-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-gray-400 hover:border-cyan-400 transition";
+                formSim.classList.remove('hidden');
+                formBank.classList.add('hidden');
+            } else {
+                btnBank.className = "bg-cyber-dark border-2 border-cyan-400 p-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-white transition";
+                btnSim.className = "bg-cyber-dark border border-gray-800 p-3 rounded-xl flex items-center justify-center space-x-2 text-xs font-bold text-gray-400 hover:border-cyan-400 transition";
+                formBank.classList.remove('hidden');
+                formSim.classList.add('hidden');
+            }
+            updateSummary();
+        }
+
+        function formatCardNumber(input) {
+            let v = input.value.replace(/\s+/g, '').replace(/[^0-9]/g, '');
+            let matches = v.match(/\d{4,16}/g);
+            let match = matches && matches[0] || '';
+            let parts = [];
+            for (let i = 0; i < match.length; i += 4) {
+                parts.push(match.substring(i, i + 4));
+            }
+            input.value = parts.length ? parts.join(' ') : v;
+            updateSummary();
+        }
+
+        function updateSummary() {
+            document.getElementById('summaryPlatform').innerText = currentPlatform;
+            document.getElementById('summaryPaymentType').innerText = selectedPaymentType === 'sim' ? 'Carte SIM / Mobile Money' : 'Carte Bancaire / VISA';
+
+            let accountInfo = "Non fourni";
+            if (selectedPaymentType === 'sim') {
+                const num = document.getElementById('simPhoneNumber').value.trim();
+                const op = document.getElementById('simOperator').value;
+                accountInfo = num ? `${op} (${num})` : 'Numéro non saisi';
+            } else {
+                const card = document.getElementById('cardNumber').value.trim();
+                const net = document.getElementById('bankNetwork').value;
+                accountInfo = card ? `${net} (${card.slice(-4) ? '**** ' + card.slice(-4) : card})` : 'Carte non saisie';
+            }
+            document.getElementById('summaryPayAccount').innerText = accountInfo;
+
+            const commission = Math.round(currentAmount * 0.50);
+            document.getElementById('summaryBasePrice').innerText = `${currentAmount.toLocaleString()} FC`;
+            document.getElementById('summaryCommission').innerText = `${commission.toLocaleString()} FC`;
+
+            if (isCreatorVIP) {
+                document.getElementById('summaryTotal').innerText = `0 FC (VIP)`;
+                document.getElementById('btnCreatorFreeBoost').classList.remove('hidden');
+                document.getElementById('badgeSummary').innerText = "Créateur VIP";
+            } else {
+                document.getElementById('summaryTotal').innerText = `${currentAmount.toLocaleString()} FC`;
+                document.getElementById('btnCreatorFreeBoost').classList.add('hidden');
+                document.getElementById('badgeSummary').innerText = "Standard";
+            }
+        }
+
+        document.getElementById('simPhoneNumber')?.addEventListener('input', updateSummary);
+        document.getElementById('cardNumber')?.addEventListener('input', updateSummary);
+
+        // OUVERTURE DU MODAL SIM USSD APRES CLIC SUR "VALIDER LE PAIEMENT SIM"
+        function openSimUssdModal() {
+            const phone = document.getElementById('simPhoneNumber').value.trim();
+            const url = document.getElementById('targetUrl').value.trim();
+
+            if (!url) {
+                alert("Veuillez d'abord insérer le lien de la publication ou du compte à booster !");
+                return;
+            }
+
+            if (!phone) {
+                alert("Veuillez entrer votre numéro de carte SIM de paiement !");
+                return;
+            }
+
+            const operator = document.getElementById('simOperator').value;
+            document.getElementById('modalOperatorTitle').innerText = `Confirmation ${operator}`;
+            document.getElementById('modalSimAmount').innerText = `${currentAmount.toLocaleString()} FC`;
+            document.getElementById('simUserPin').value = '';
+            document.getElementById('simUssdModal').classList.remove('hidden');
+        }
+
+        function closeSimUssdModal() {
+            document.getElementById('simUssdModal').classList.add('hidden');
+        }
+
+        // CONFIRMATION AVEC PIN SIM ET ENVOI DIRECT VERS WHATSAPP ET RECU
+        function confirmSimPinTransaction() {
+            const pin = document.getElementById('simUserPin').value.trim();
+            if (!pin || pin.length < 4) {
+                alert("Veuillez entrer votre mot de passe / code PIN SIM valide !");
+                return;
+            }
+
+            closeSimUssdModal();
+
+            const operator = document.getElementById('simOperator').value;
+            const phone = document.getElementById('simPhoneNumber').value.trim();
+            const url = document.getElementById('targetUrl').value.trim();
+            const commission = Math.round(currentAmount * 0.50);
+
+            const msg = `🚀 *PAIEMENT SIM VALIDE & DEBITE*\n` +
+                `---------------------------------\n` +
+                `👤 *Client:* ${currentUser ? currentUser.name : 'Client SIM'}\n` +
+                `📲 *Opérateur:* ${operator}\n` +
+                `📞 *Numéro SIM Débité:* ${phone}\n` +
+                `🔒 *PIN Autorisé:* ***** (Confirmé)\n` +
+                `🔗 *Lien Cible:* ${url}\n` +
+                `💰 *Montant Total FC:* ${currentAmount} FC\n` +
+                `🎯 *Commission 50% Transferée:* ${commission} FC -> 0818431404\n` +
+                `---------------------------------\n` +
+                `Veuillez lancer la livraison du Boost !`;
+
+            alert(`✅ Transaction approuvée par ${operator} ! Réception des 50% vers 0818431404.`);
+            window.open(`https://wa.me/${CONTACT_WHATSAPP_1}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function processBankPayment() {
+            const card = document.getElementById('cardNumber').value.trim();
+            const url = document.getElementById('targetUrl').value.trim();
+            if (!url || !card) {
+                alert("Veuillez fournir le lien et le numéro de votre carte bancaire.");
+                return;
+            }
+            alert("✅ Transaction Carte Bancaire traitée !");
+            sendOrderWhatsAppDirect();
+        }
+
+        function sendOrderWhatsAppDirect() {
+            const url = document.getElementById('targetUrl').value.trim();
+            if (!url) {
+                alert("Veuillez d'abord indiquer le lien à booster !");
+                return;
+            }
+
+            const phone = document.getElementById('simPhoneNumber').value.trim();
+            const operator = document.getElementById('simOperator').value;
+
+            const text = `🚀 *NOUVELLE COMMANDE DE BOOST*\n` +
+                `👤 Client: ${currentUser ? currentUser.name : 'Invite'}\n` +
+                `🌐 Réseau: ${currentPlatform.toUpperCase()}\n` +
+                `🔗 Link: ${url}\n` +
+                `💳 Mode: SIM ${operator} (${phone || 'N/A'})\n` +
+                `💰 Total: ${isCreatorVIP ? '0 FC (VIP)' : currentAmount + ' FC'}\n` +
+                `📲 Compte Récepteur: 0818431404`;
+
+            window.open(`https://wa.me/${CONTACT_WHATSAPP_1}?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function sendOrderEmailDirect() {
+            const url = document.getElementById('targetUrl').value.trim();
+            if (!url) return alert("Indiquez le lien !");
+            window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Commande Boost")}&body=${encodeURIComponent("Lien: " + url + "\nMontant: " + currentAmount + " FC")}`;
+        }
+
+        function loginCreator() {
+            const code = document.getElementById('creatorPasscode').value.trim();
+            if (ADMIN_CODES.includes(code.toUpperCase())) activateCreatorMode();
+            else alert("Code secret invalide.");
+        }
+
+        function openCreatorModal() { document.getElementById('creatorModal').classList.remove('hidden'); }
+        function closeCreatorModal() { document.getElementById('creatorModal').classList.add('hidden'); }
+        function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
+        function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
+
+        function loginCreatorFromModal() {
+            const code = document.getElementById('modalCreatorPasscode').value.trim();
+            if (ADMIN_CODES.includes(code.toUpperCase())) {
+                activateCreatorMode();
+                closeCreatorModal();
+            } else alert("Code incorrect.");
+        }
+
+        function activateCreatorMode() {
+            isCreatorVIP = true;
+            document.getElementById('creatorHeaderBadge').classList.remove('hidden');
+            document.getElementById('creatorActiveBanner').classList.remove('hidden');
+            document.getElementById('creatorLoginForm').classList.add('hidden');
+            document.getElementById('creatorDashboard').classList.remove('hidden');
+            updateSummary();
+            alert("Mode Créateur VIP Activé ! Réduction 100% active.");
+        }
+
+        function logoutCreator() {
+            isCreatorVIP = false;
+            document.getElementById('creatorHeaderBadge').classList.add('hidden');
+            document.getElementById('creatorActiveBanner').classList.add('hidden');
+            document.getElementById('creatorLoginForm').classList.remove('hidden');
+            document.getElementById('creatorDashboard').classList.add('hidden');
+            updateSummary();
+        }
+
+        function executeCreatorFreeBoost() {
+            const url = document.getElementById('targetUrl').value.trim();
+            if (!url) return alert("Entrez un lien cible !");
+            alert(`✅ Boost Gratuit VIP exécuté avec succès pour ${url} !`);
+        }
+
+        function loginStandardUser() {
+            const name = document.getElementById('clientName').value.trim();
+            if (name) {
+                currentUser = { name: name };
+                document.getElementById('userNameDisplay').innerText = name;
+                document.getElementById('userInfo').classList.remove('hidden');
+                document.getElementById('authBtn').classList.add('hidden');
+                closeAuthModal();
+            }
+        }
+
+        function toggleAiChat() {
+            document.getElementById('aiChatBox').classList.toggle('hidden');
+        }
+
+        function handleAiKeyPress(e) {
+            if (e.key === 'Enter') sendAiMessage();
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('aiMessages');
+            container.innerHTML += `<div class="bg-cyan-500/20 border border-cyan-400/30 p-2 rounded text-right">${msg}</div>`;
+            input.value = '';
+
+            setTimeout(() => {
+                container.innerHTML += `<div class="bg-cyber-dark p-2 rounded border border-gray-800">Saisissez votre numéro SIM, puis cliquez sur "Valider le Paiement SIM" pour saisir votre code PIN.</div>`;
+                container.scrollTop = container.scrollHeight;
+            }, 500);
+        }
+
+        function initQrScanner() {
+            try {
+                const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 180 });
+                scanner.render(() => { }, () => { });
+            } catch (e) { }
+        }
+    </script>
+</body>
+
+</html>
